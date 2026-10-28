@@ -29,7 +29,8 @@ def main():
         '5_CompareGiro.py',
         '6_AdjDateFormat.py',
         '7_HelperSSData.py',
-        '8_ARInjectionToSS.py',
+        '8_HelperFraudData.py',
+        '9_ARInjectionToSS.py',
         'piutang.conf',
         'credentials.json',
     ]
@@ -76,7 +77,8 @@ def main():
         '5_CompareGiro.py',
         '6_AdjDateFormat.py',
         '7_HelperSSData.py',
-        '8_ARInjectionToSS.py',
+        '8_HelperFraudData.py',
+        '9_ARInjectionToSS.py',
     ]
 
     for script_name in scripts_to_run:
