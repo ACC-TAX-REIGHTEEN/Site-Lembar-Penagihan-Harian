@@ -1,6 +1,22 @@
 import configparser
 import sys
+import warnings
 import pandas as pd
+
+def baca_excel_adaptif(file_path):
+    try:
+        return pd.read_excel(file_path, engine="calamine")
+    except Exception:
+        pass
+
+    try:
+        return pd.read_excel(file_path, engine="openpyxl")
+    except Exception:
+        pass
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return pd.read_excel(file_path)
 
 config = configparser.ConfigParser()
 config.read("piutang.conf")
@@ -16,7 +32,7 @@ if status_fraud != "ya":
     sys.exit()
 
 nama_file = "Piutang_clean_temp.xlsx"
-df = pd.read_excel(nama_file)
+df = baca_excel_adaptif(nama_file)
 
 kolom_target = "Nama Penjual"
 

@@ -1,18 +1,34 @@
 import configparser
 import os
+import warnings
 import pandas as pd
+
+def baca_excel_adaptif(file_path, sheet_name=0, header=None):
+    try:
+        return pd.read_excel(file_path, sheet_name=sheet_name, header=header, engine='calamine')
+    except Exception:
+        pass
+
+    try:
+        return pd.read_excel(file_path, sheet_name=sheet_name, header=header, engine='openpyxl')
+    except Exception:
+        pass
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return pd.read_excel(file_path, sheet_name=sheet_name, header=header)
 
 def find_header_and_read(file_path, sheet_name, required_cols_options):
     sheet_target = sheet_name if sheet_name else 0
-    df_raw = pd.read_excel(file_path, sheet_name=sheet_target, header=None)
+    df_raw = baca_excel_adaptif(file_path, sheet_name=sheet_target, header=None)
     
     header_idx = None
     matched_cols = []
     
     for idx, row in df_raw.iterrows():
         row_values = [str(val).strip() for val in row.dropna().values]
-        
         temp_matched = []
+        
         for col_opts in required_cols_options:
             if isinstance(col_opts, list):
                 found = next((c for c in col_opts if c in row_values), None)
@@ -31,8 +47,8 @@ def find_header_and_read(file_path, sheet_name, required_cols_options):
         raise ValueError(
             f"Kolom {required_cols_options} tidak ditemukan pada sheet '{sheet_target}' di file {file_path}."
         )
-    
-    df = pd.read_excel(file_path, sheet_name=sheet_target, header=header_idx)
+        
+    df = baca_excel_adaptif(file_path, sheet_name=sheet_target, header=header_idx)
     df.columns = df.columns.astype(str).str.strip()
     return df, matched_cols
 
@@ -91,7 +107,6 @@ def process_piutang():
             lookup_dict[clean_key] = clean_ret
 
     print(f"--> Berhasil memuat {len(lookup_dict)} data acuan dari Master.")
-
     print(f"--> Membaca {export_file}...")
     
     key_options = ["Kode Pelanggan", "Kode"]
