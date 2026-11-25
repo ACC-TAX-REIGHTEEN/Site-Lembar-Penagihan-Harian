@@ -171,7 +171,7 @@ Sebelum menjalankan proyek ini, pastikan Anda memiliki:
 
 3. **Instal seluruh pustaka Python yang dibutuhkan:**
    ```bash
-   pip install pandas numpy openpyxl xlsxwriter xlrd requests gspread
+   pip install pandas numpy openpyxl xlsxwriter xlrd python-calamine requests gspread
    ```
 
 ### 2. Konfigurasi Google Service Account (`credentials.json`)
