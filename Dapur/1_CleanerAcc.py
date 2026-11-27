@@ -1,15 +1,15 @@
 import datetime
 import os
-import pandas as pd
+import warnings
 import numpy as np
+import pandas as pd
 
 indo_months_in = {
     'Jan': 'Jan', 'Feb': 'Feb', 'Mar': 'Mar', 'Apr': 'Apr', 'Mei': 'May', 'Jun': 'Jun',
     'Jul': 'Jul', 'Agu': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nop': 'Nov', 'Des': 'Dec',
     'Peb': 'Feb', 'Ags': 'Aug', 'Agt': 'Aug',
-    
     'jan': 'Jan', 'feb': 'Feb', 'mar': 'Mar', 'apr': 'Apr', 'mei': 'May', 'jun': 'Jun',
-    'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov', 
+    'jul': 'Jul', 'agu': 'Aug', 'ags': 'Aug', 'agt': 'Aug', 'sep': 'Sep', 'okt': 'Oct', 'nop': 'Nov',
     'nov': 'Nov', 'des': 'Dec'
 }
 
@@ -35,11 +35,51 @@ def parse_tgl_faktur(val):
     except Exception:
         return val_str
 
+def baca_excel_adaptif(file_path):
+    try:
+        return pd.read_excel(file_path, header=None, engine='calamine')
+    except Exception:
+        pass
+
+    try:
+        return pd.read_excel(file_path, header=None, engine='openpyxl')
+    except Exception:
+        pass
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return pd.read_excel(file_path, header=None)
+
+def parse_to_float(val):
+    if pd.isna(val) or str(val).strip() == "":
+        return np.nan
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip()
+    
+    if '.' in s and ',' in s:
+        if s.rfind(',') > s.rfind('.'):
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            s = s.replace(',', '')
+    elif ',' in s:
+        if len(s) - s.rfind(',') <= 3:
+            s = s.replace(',', '.')
+        else:
+            s = s.replace(',', '')
+    elif '.' in s:
+        if s.count('.') > 1 or (len(s) - s.rfind('.') == 4):
+            s = s.replace('.', '')
+    try:
+        return float(s)
+    except Exception:
+        return np.nan
+
 def clean_data_autofit(input_file, output_file):
     print(f"--> Sedang memproses file: {input_file}...")
     
     try:
-        df = pd.read_excel(input_file, header=None)
+        df = baca_excel_adaptif(input_file)
     except Exception as e:
         print(f"--> Error membaca file: {e}")
         return
@@ -119,31 +159,6 @@ def clean_data_autofit(input_file, output_file):
     temp_df["Tgl Faktur"] = temp_df["Tgl Faktur"].apply(parse_tgl_faktur)
     temp_df["Jatuh Tempo"] = temp_df["Jatuh Tempo"].apply(parse_tgl_faktur)
 
-    def parse_to_float(val):
-        if pd.isna(val) or str(val).strip() == "":
-            return np.nan
-        if isinstance(val, (int, float)):
-            return float(val)
-        s = str(val).strip()
-        
-        if '.' in s and ',' in s:
-            if s.rfind(',') > s.rfind('.'):
-                s = s.replace('.', '').replace(',', '.')
-            else:
-                s = s.replace(',', '')
-        elif ',' in s:
-            if len(s) - s.rfind(',') <= 3:
-                s = s.replace(',', '.')
-            else:
-                s = s.replace(',', '')
-        elif '.' in s:
-            if s.count('.') > 1 or (len(s) - s.rfind('.') == 4):
-                s = s.replace('.', '')
-        try:
-            return float(s)
-        except:
-            return np.nan
-
     cols_to_clean = ['Nilai Faktur', 'Sisa Piutang']
     for col in cols_to_clean:
         if col in temp_df.columns:
@@ -164,8 +179,8 @@ def clean_data_autofit(input_file, output_file):
         "Nama Kontak"
     ]
     temp_df.columns = final_headers
-    df_final = temp_df.copy()
-    df_final.reset_index(drop=True, inplace=True)
+    
+    df_final = temp_df.reset_index(drop=True)
     
     try:
         with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
@@ -194,7 +209,7 @@ def clean_data_autofit(input_file, output_file):
 
     return df_final
 
-input_filename = 'Piutang.xls' 
+input_filename = 'Piutang.xls'
 output_filename = 'Piutang_clean_temp.xlsx'
 
 if __name__ == "__main__":
